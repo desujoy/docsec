@@ -17,6 +17,9 @@ type ProofResult = {
     fileName: string;
 };
 
+const jsonReplacer = (key: any, value: any) =>
+    typeof value === 'bigint' ? value.toString() : value;
+
 // Define a type for a single file record returned from the contract
 type FileRecord = {
     uploader: string;
@@ -41,6 +44,7 @@ export function Test() {
     const [isLoading, setIsLoading] = useState(false);
     const [uploaderAddress, setUploaderAddress] = useState('');
     const [proofResult, setProofResult] = useState<ProofResult | null>(null);
+    const [fileExists, setFileExists] = useState<boolean | null>(null);
 
     // --- EVENT HANDLERS ---
 
@@ -86,7 +90,7 @@ export function Test() {
         }
         executeTransaction(removeUploader(uploaderAddress as `0x${string}`), "Uploader removed!");
     };
-    
+
     const handleRegisterFile = () => {
         if (!proofResult) {
             return toast.error("Please generate a proof first.");
@@ -95,6 +99,15 @@ export function Test() {
             registerFile({ ...proofResult.proof, publicSignals: proofResult.publicSignals, fileName: proofResult.fileName }),
             "File registered successfully!"
         );
+    };
+
+    const handleExistenceProof = async () => {
+        if (!proofResult) {
+            return toast.error("Please generate a proof first.");
+        }
+        const fileExists = await findFileByHash(`0x${proofResult.publicSignals[0].toString(16)}`);
+        toast.success("Existence proof checked in console.");
+        setFileExists(fileExists !== null);
     };
 
     return (
@@ -119,7 +132,7 @@ export function Test() {
                         <button className="btn btn-error" onClick={handleRemoveUploader} disabled={isLoading}>Remove</button>
                     </div>
                 </div>
-                
+
                 {/* --- FILE PROVING & REGISTRATION --- */}
                 <div className="p-4 border rounded-lg space-y-4">
                     <h2 className="text-xl font-semibold">Prove & Register a File</h2>
@@ -128,11 +141,18 @@ export function Test() {
                         <div className="p-3 bg-base-200 rounded-md">
                             <p className="font-mono text-sm break-all"><strong>File Hash (Public Signal):</strong> 0x{proofResult.publicSignals[0].toString(16)}</p>
                             <p><strong>Filename:</strong> {proofResult.fileName}</p>
-                            <button className="btn btn-info mt-2" onClick={async () => console.log(await findFileByHash(`0x${proofResult.publicSignals[0].toString(16)}`))}>Prove Existence</button>
+                            <p><strong>Digital Signal:</strong></p>
+                            <pre className="whitespace-pre-wrap">{JSON.stringify(proofResult, jsonReplacer, 2)}</pre>
+                            <button className="btn btn-info mt-2" onClick={handleExistenceProof}>Prove Existence</button>
                             <button className="btn btn-primary mt-4" onClick={handleRegisterFile} disabled={!isUploader || isLoading}>
                                 {isLoading ? "Registering..." : "Register File with Proof"}
                             </button>
                             {!isUploader && <p className="text-red-500 text-sm mt-2">You must be an authorized uploader to register a file.</p>}
+                            {fileExists !== null && (
+                                <p className={`mt-2 ${fileExists ? 'text-green-500' : 'text-red-500'}`}>
+                                    File {fileExists ? 'exists' : 'does not exist'} in the registry.
+                                </p>
+                            )}
                         </div>
                     )}
                 </div>
