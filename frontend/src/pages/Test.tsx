@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useFileRegistry } from '../hooks/useFileRegistry';
 import { MainLayout } from '../components/layout/MainLayout';
+import FileProver, { Proof } from '../components/FileProver';
 
 export function Test() {
     const {
@@ -21,22 +22,18 @@ export function Test() {
     const [fileRecord, setFileRecord] = useState<FileRecord>(null);
     const [fileId, setFileId] = useState('');
     const [uploaderAddress, setUploaderAddress] = useState('');
-    const [newOwnerAddress, setNewOwnerAddress] = useState('');
-    
+    const [fileProof, setFileProof] = useState({
+        pA: ['', ''],
+        pB: [['', ''], ['', '']],
+        pC: ['', '']
+    });
+    const [filePubSignal, setFilePubSignal] = useState<string>('');
+    const [filename, setFilename] = useState<string>('');
 
     // Helper to check if a string is a valid 0x address
     const isValid0x = (str: string) => /^0x[a-fA-F0-9]{40}$/.test(str);
     // Helper to check if a string is a valid 0x fileId (allow any length > 2)
     const isValid0xAny = (str: string) => /^0x[a-fA-F0-9]+$/.test(str);
-
-    // Minimal registerFile form state
-    const [registerData, setRegisterData] = useState({
-        pA: ['', ''],
-        pB: [['', ''], ['', '']],
-        pC: ['', ''],
-        publicSignals: [''],
-        fileName: ''
-    });
 
     // Handlers
     const handleAddUploader = () => {
@@ -65,18 +62,30 @@ export function Test() {
         // Minimal validation, assumes all fields are filled
         try {
             registerFile({
-                pA: [BigInt(registerData.pA[0]), BigInt(registerData.pA[1])],
+                pA: [BigInt(fileProof.pA[0]), BigInt(fileProof.pA[1])],
                 pB: [
-                    [BigInt(registerData.pB[0][0]), BigInt(registerData.pB[0][1])],
-                    [BigInt(registerData.pB[1][0]), BigInt(registerData.pB[1][1])]
+                    [BigInt(fileProof.pB[0][0]), BigInt(fileProof.pB[0][1])],
+                    [BigInt(fileProof.pB[1][0]), BigInt(fileProof.pB[1][1])]
                 ],
-                pC: [BigInt(registerData.pC[0]), BigInt(registerData.pC[1])],
-                publicSignals: [BigInt(registerData.publicSignals[0])],
-                fileName: registerData.fileName
+                pC: [BigInt(fileProof.pC[0]), BigInt(fileProof.pC[1])],
+                publicSignals: [BigInt(filePubSignal)],
+                fileName: filename
             });
         } catch (e) {
             alert('Invalid register file data');
         }
+    };
+
+    const handleFileProof = (proof: Proof) => {
+        const generatedProof = {
+            pA: [BigInt(proof.pi_a[0]).toString(), BigInt(proof.pi_a[1]).toString()],
+            pB: [
+                [BigInt(proof.pi_b[0][0]).toString(), BigInt(proof.pi_b[0][1]).toString()],
+                [BigInt(proof.pi_b[1][0]).toString(), BigInt(proof.pi_b[1][1]).toString()]
+            ],
+            pC: [BigInt(proof.pi_c[0]).toString(), BigInt(proof.pi_c[1]).toString()],
+        };
+        setFileProof(generatedProof);
     };
 
     return (
@@ -97,6 +106,7 @@ export function Test() {
                 <button onClick={handleAddUploader}>Add Uploader</button>
                 <button onClick={handleRemoveUploader}>Remove Uploader</button>
             </div>
+            <FileProver setFileProof={handleFileProof} setPubSignal={setFilePubSignal} setFilename={setFilename} />
             <h2>File Record</h2>
             <input
                 type="text"
@@ -119,16 +129,16 @@ export function Test() {
             )}
             <h2>Register File</h2>
             <div>
-                <input type="text" placeholder="fileName" value={registerData.fileName} onChange={e => setRegisterData(d => ({ ...d, fileName: e.target.value }))} />
-                <input type="text" placeholder="pA[0]" value={registerData.pA[0]} onChange={e => setRegisterData(d => ({ ...d, pA: [e.target.value, d.pA[1]] }))} />
-                <input type="text" placeholder="pA[1]" value={registerData.pA[1]} onChange={e => setRegisterData(d => ({ ...d, pA: [d.pA[0], e.target.value] }))} />
-                <input type="text" placeholder="pB[0][0]" value={registerData.pB[0][0]} onChange={e => setRegisterData(d => ({ ...d, pB: [[e.target.value, d.pB[0][1]], d.pB[1]] }))} />
-                <input type="text" placeholder="pB[0][1]" value={registerData.pB[0][1]} onChange={e => setRegisterData(d => ({ ...d, pB: [[d.pB[0][0], e.target.value], d.pB[1]] }))} />
-                <input type="text" placeholder="pB[1][0]" value={registerData.pB[1][0]} onChange={e => setRegisterData(d => ({ ...d, pB: [d.pB[0], [e.target.value, d.pB[1][1]]] }))} />
-                <input type="text" placeholder="pB[1][1]" value={registerData.pB[1][1]} onChange={e => setRegisterData(d => ({ ...d, pB: [d.pB[0], [d.pB[1][0], e.target.value]] }))} />
-                <input type="text" placeholder="pC[0]" value={registerData.pC[0]} onChange={e => setRegisterData(d => ({ ...d, pC: [e.target.value, d.pC[1]] }))} />
-                <input type="text" placeholder="pC[1]" value={registerData.pC[1]} onChange={e => setRegisterData(d => ({ ...d, pC: [d.pC[0], e.target.value] }))} />
-                <input type="text" placeholder="publicSignals[0]" value={registerData.publicSignals[0]} onChange={e => setRegisterData(d => ({ ...d, publicSignals: [e.target.value] }))} />
+                <input type="text" placeholder="fileName" value={filename} onChange={e => setFilename(e.target.value)} />
+                <input type="text" placeholder="pA[0]" value={fileProof.pA[0]} onChange={e => setFileProof(d => ({ ...d, pA: [e.target.value, d.pA[1]] }))} />
+                <input type="text" placeholder="pA[1]" value={fileProof.pA[1]} onChange={e => setFileProof(d => ({ ...d, pA: [d.pA[0], e.target.value] }))} />
+                <input type="text" placeholder="pB[0][0]" value={fileProof.pB[0][0]} onChange={e => setFileProof(d => ({ ...d, pB: [[e.target.value, d.pB[0][1]], d.pB[1]] }))} />
+                <input type="text" placeholder="pB[0][1]" value={fileProof.pB[0][1]} onChange={e => setFileProof(d => ({ ...d, pB: [[d.pB[0][0], e.target.value], d.pB[1]] }))} />
+                <input type="text" placeholder="pB[1][0]" value={fileProof.pB[1][0]} onChange={e => setFileProof(d => ({ ...d, pB: [d.pB[0], [e.target.value, d.pB[1][1]]] }))} />
+                <input type="text" placeholder="pB[1][1]" value={fileProof.pB[1][1]} onChange={e => setFileProof(d => ({ ...d, pB: [d.pB[0], [d.pB[1][0], e.target.value]] }))} />
+                <input type="text" placeholder="pC[0]" value={fileProof.pC[0]} onChange={e => setFileProof(d => ({ ...d, pC: [e.target.value, d.pC[1]] }))} />
+                <input type="text" placeholder="pC[1]" value={fileProof.pC[1]} onChange={e => setFileProof(d => ({ ...d, pC: [d.pC[0], e.target.value] }))} />
+                <input type="text" placeholder="publicSignals[0]" value={filePubSignal} onChange={e => setFilePubSignal(e.target.value)} />
                 <button onClick={handleRegisterFile}>Register File</button>
             </div>
             <p>Use the buttons above to interact with the File Registry contract.</p>
