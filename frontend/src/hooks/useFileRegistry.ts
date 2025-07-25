@@ -1,6 +1,10 @@
-import { useAccount, useReadContract, useWriteContract, useWatchContractEvent } from 'wagmi';
-import { fileRegistryAbi, fileRegistryAddress } from '../constants/contracts';
+// hooks/useFileRegistry.ts
 
+import { useAccount, useReadContract, useWriteContract, useWatchContractEvent } from 'wagmi';
+import { readContract } from 'wagmi/actions';
+import { fileRegistryAbi, fileRegistryAddress, verifierAddress } from '../constants/contracts';
+import { config as wagmiConfig } from '../wagmi';
+import { groth16VerifierAbi } from '../generated';
 
 export const useFileRegistry = () => {
   const { address } = useAccount();
@@ -19,31 +23,19 @@ export const useFileRegistry = () => {
     functionName: 'isUploader',
     args: [address as `0x${string}`],
     query: {
-      // Only run this query if the user's address is available
       enabled: !!address,
     },
   });
 
-  // This function returns a wagmi hook instance for a specific file hash
-  const getFileRecord = (hash: `0x${string}`) => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useReadContract({
-      abi: fileRegistryAbi,
-      address: fileRegistryAddress,
-      functionName: 'getFileRecord',
-      args: [hash],
-      query: {
-        // Only run this query if a valid hash is provided
-        enabled: !!hash,
-      },
-    });
-  };
+  const { data: allFiles, refetch: refetchAllFiles } = useReadContract({
+    abi: fileRegistryAbi,
+    address: fileRegistryAddress,
+    functionName: 'getAllFileRecords',
+  });
 
   // --- WRITES ---
 
-  const { writeContract: registerFile } = useWriteContract();
-  const { writeContract: addUploader } = useWriteContract();
-  const { writeContract: removeUploader } = useWriteContract();
+  const { writeContractAsync } = useWriteContract();
 
   // --- EVENTS ---
 
@@ -51,47 +43,39 @@ export const useFileRegistry = () => {
     address: fileRegistryAddress,
     abi: fileRegistryAbi,
     eventName: 'FileRegistered',
-    onLogs(logs) {
-      console.log('New file registered:', logs);
-      // You could potentially trigger a refetch of a list of files here
-    },
+    onLogs: () => refetchAllFiles(),
   });
+  // ... (other event watchers)
 
-  useWatchContractEvent({
-    address: fileRegistryAddress,
-    abi: fileRegistryAbi,
-    eventName: 'UploaderAdded',
-    onLogs(logs) {
-      console.log('Uploader added:', logs);
-      // Refetch the current user's uploader status in case they were the one added
-      refetchIsUploader();
-    },
-  });
-
-  useWatchContractEvent({
-    address: fileRegistryAddress,
-    abi: fileRegistryAbi,
-    eventName: 'UploaderRemoved',
-    onLogs(logs) {
-      console.log('Uploader removed:', logs);
-      // Refetch the current user's uploader status in case they were the one removed
-      refetchIsUploader();
-    },
-  });
-
-  // --- RETURN ---
+  // --- HOOK RETURN ---
 
   return {
     // Data
     owner,
     isUploader,
-    
-    // Functions
-    getFileRecord,
+    allFiles,
+
+    // Imperative Functions
+    getFileRecordOnClick: (hash: `0x${string}`) =>
+      readContract(wagmiConfig, {
+        abi: fileRegistryAbi,
+        address: fileRegistryAddress,
+        functionName: 'getFileRecord',
+        args: [hash],
+      }),
+
+    // NEW: Function to verify a proof against the verifier contract
+    verifyProof: (proofData: { pA: [bigint, bigint]; pB: [[bigint, bigint], [bigint, bigint]]; pC: [bigint, bigint]; publicSignals: [bigint]; }) =>
+      readContract(wagmiConfig, {
+        abi: groth16VerifierAbi,
+        address: verifierAddress,
+        functionName: 'verifyProof',
+        args: [proofData.pA, proofData.pB, proofData.pC, proofData.publicSignals],
+      }),
 
     // Write Methods
     registerFile: (proofData: { pA: [bigint, bigint]; pB: [[bigint, bigint], [bigint, bigint]]; pC: [bigint, bigint]; publicSignals: [bigint]; fileName: string; }) =>
-      registerFile({
+      writeContractAsync({
         abi: fileRegistryAbi,
         address: fileRegistryAddress,
         functionName: 'registerFile',
@@ -99,7 +83,7 @@ export const useFileRegistry = () => {
       }),
 
     addUploader: (uploaderAddress: `0x${string}`) =>
-      addUploader({
+      writeContractAsync({
         abi: fileRegistryAbi,
         address: fileRegistryAddress,
         functionName: 'addUploader',
@@ -107,15 +91,32 @@ export const useFileRegistry = () => {
       }),
 
     removeUploader: (uploaderAddress: `0x${string}`) =>
-      removeUploader({
+      writeContractAsync({
         abi: fileRegistryAbi,
         address: fileRegistryAddress,
         functionName: 'removeUploader',
         args: [uploaderAddress],
       }),
+    findFileByHash: async (hash: `0x${string}`) => {
+      try {
+        // Try to read the contract. If the hash doesn't exist, this will throw an error.
+        const record = await readContract(wagmiConfig, {
+          abi: fileRegistryAbi,
+          address: fileRegistryAddress,
+          functionName: 'getFileRecord',
+          args: [hash],
+        });
+        return record; // Return the record if found
+      } catch (error) {
+        // If the contract call failed (likely because the file doesn't exist), return null.
+        console.info("File not found on-chain:", error);
+        return null;
+      }
+    },
 
     // Refetching
     refetchOwner,
     refetchIsUploader,
+    refetchAllFiles,
   };
 };

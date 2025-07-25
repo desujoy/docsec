@@ -17,6 +17,32 @@ export const fileRegistryAbi = [
   },
   {
     type: 'function',
+    inputs: [],
+    name: 'getAllFileRecords',
+    outputs: [
+      { name: 'contentHashes', internalType: 'bytes32[]', type: 'bytes32[]' },
+      {
+        name: 'records',
+        internalType: 'struct FileRegistry.FileRecord[]',
+        type: 'tuple[]',
+        components: [
+          { name: 'uploader', internalType: 'address', type: 'address' },
+          { name: 'timestamp', internalType: 'uint256', type: 'uint256' },
+          { name: 'fileName', internalType: 'string', type: 'string' },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'getFileCount',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     inputs: [{ name: 'contentHash', internalType: 'bytes32', type: 'bytes32' }],
     name: 'getFileRecord',
     outputs: [
