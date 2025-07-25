@@ -4,6 +4,7 @@ import { Upload } from './pages/Upload';
 import { Verify } from './pages/Verify';
 import { Admin } from './pages/Admin';
 import { Audit } from './pages/Audit';
+import { Test } from './pages/Test';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/verify" element={<Verify />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/audit" element={<Audit />} />
+        <Route path="/test" element={<Test />} />
       </Routes>
     </BrowserRouter>
   );

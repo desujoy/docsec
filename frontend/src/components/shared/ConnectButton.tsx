@@ -1,7 +1,7 @@
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 
 export function ConnectButton() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
 
@@ -9,6 +9,7 @@ export function ConnectButton() {
     return (
       <div>
         <p>Connected as {address}</p>
+        <p>Current Chain ID: {chainId}</p>
         <button onClick={() => disconnect()}>Disconnect</button>
       </div>
     );
