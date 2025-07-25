@@ -1,15 +1,15 @@
-import React from 'react';
-import { Navbar } from './Navbar';
+import { ReactNode } from "react";
+import { Navbar } from "./Navbar";
 
 interface MainLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div>
+    <div className="min-h-screen bg-background">
       <Navbar />
-      <main style={{ padding: '1rem' }}>{children}</main>
+      <main className="container mx-auto px-4 py-8">{children}</main>
     </div>
   );
 }
