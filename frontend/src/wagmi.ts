@@ -6,7 +6,7 @@ export const config = createConfig({
   chains: [sepolia],
   connectors: [metaMask()],
   transports: {
-    [sepolia.id]: webSocket("wss://ethereum-sepolia-rpc.publicnode.com"),
+    [sepolia.id]: webSocket("wss://sepolia.gateway.tenderly.co"),
   },
 });
 
