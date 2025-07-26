@@ -1,13 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MainLayout } from "../components/layout/MainLayout";
-import { useWatchContractEvent } from "wagmi";
-import { fileRegistryAbi, fileRegistryAddress } from "../constants/contracts";
-import { getLogs } from "viem/actions";
-import { usePublicClient } from "wagmi";
-import { decodeEventLog } from "viem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { History, FileText, User, Hash, Calendar } from "lucide-react";
+import { History } from "lucide-react";
 import { useFileRegistry } from "@/hooks/useFileRegistry";
 
 type FileRecord = {

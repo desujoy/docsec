@@ -1,21 +1,8 @@
 import { useState } from "react";
-import { MainLayout } from "../components/layout/MainLayout";
-import { FileUploader } from "../components/shared/FileUploader";
-import { Spinner } from "../components/shared/Spinner";
+import { MainLayout } from "../components/layout/MainLayout"
 import { Notification } from "../components/shared/Notification";
 import { useFileRegistry } from "../hooks/useFileRegistry";
-import { generateProofAndCalldata, uploadToIpfs } from "../api";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Upload as UploadIcon, FileCheck, ExternalLink } from "lucide-react";
+import { Upload as UploadIcon } from "lucide-react";
 import FileProver, { Proof } from "@/components/FileProver";
 import { useWatchContractEvent } from "wagmi";
 import { fileRegistryAddress } from "@/constants/contracts";
@@ -33,7 +20,7 @@ type ProofResult = {
   fileName: string;
 };
 
-const jsonReplacer = (key: any, value: any) =>
+const jsonReplacer = (_: any, value: any) =>
   typeof value === 'bigint' ? value.toString() : value;
 
 export function Upload() {

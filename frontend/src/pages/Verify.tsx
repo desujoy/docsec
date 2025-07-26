@@ -1,22 +1,8 @@
 import { useState } from "react";
 import { MainLayout } from "../components/layout/MainLayout";
-import { FileUploader } from "../components/shared/FileUploader";
-import { Spinner } from "../components/shared/Spinner";
 import { Notification } from "../components/shared/Notification";
-import { VerificationResult } from "../components/features/VerificationResult";
-import { getVerificationHash } from "../api";
 import { useFileRegistry } from "../hooks/useFileRegistry";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { FileCheck, Hash, Shield } from "lucide-react";
+import { FileCheck } from "lucide-react";
 import FileProver, { Proof } from "@/components/FileProver";
 
 type ProofResult = {
@@ -29,13 +15,11 @@ type ProofResult = {
   fileName: string;
 };
 
-const jsonReplacer = (key: any, value: any) =>
+const jsonReplacer = (_: any, value: any) =>
   typeof value === 'bigint' ? value.toString() : value;
 
 export function Verify() {
   const { findFileByHash } = useFileRegistry();
-
-  const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<{
     message: string;
     type: "success" | "error";
