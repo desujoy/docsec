@@ -27,7 +27,7 @@ export const useFileRegistry = () => {
     },
   });
 
-  const { data: allFiles, refetch: refetchAllFiles } = useReadContract({
+  const { data: allFiles, refetch: refetchAllFiles, isLoading: allFilesLoading } = useReadContract({
     abi: fileRegistryAbi,
     address: fileRegistryAddress,
     functionName: 'getAllFileRecords',
@@ -113,7 +113,7 @@ export const useFileRegistry = () => {
         return null;
       }
     },
-
+    allFilesLoading,
     // Refetching
     refetchOwner,
     refetchIsUploader,
