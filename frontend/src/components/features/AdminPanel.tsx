@@ -12,11 +12,44 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { UserPlus, UserMinus, Users } from "lucide-react";
+import { useWatchContractEvent } from "wagmi";
+import { fileRegistryAddress } from "@/constants/contracts";
+import { fileRegistryAbi } from "@/generated";
 
 export function AdminPanel() {
   const { addUploader, removeUploader } = useFileRegistry();
   const [uploaderAddress, setUploaderAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  useWatchContractEvent({
+    address: fileRegistryAddress,
+    abi: fileRegistryAbi,
+    eventName: 'UploaderAdded',
+    onLogs: () => {
+      setNotification({
+        message: "Uploader added successfully!",
+        type: "success",
+      });
+      setUploaderAddress("");
+    },
+  });
+
+  useWatchContractEvent({
+    address: fileRegistryAddress,
+    abi: fileRegistryAbi,
+    eventName: 'UploaderRemoved',
+    onLogs: () => {
+      setNotification({
+        message: "Uploader removed successfully!",
+        type: "success",
+      });
+      setUploaderAddress("");
+    },
+  });
 
   const handleAddUploader = async () => {
     if (!uploaderAddress) return;
@@ -92,6 +125,17 @@ export function AdminPanel() {
           </Button>
         </div>
       </div>
+
+      {notification && (
+        <Card className={`bg-${notification.type === "success" ? "green" : "red"}-100`}>
+          <CardHeader>
+            <CardTitle>{notification.type === "success" ? "Success" : "Error"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription>{notification.message}</CardDescription>
+          </CardContent>
+        </Card>
+      )}
 
       <Separator />
 

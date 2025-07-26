@@ -17,53 +17,62 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { FileCheck, Hash, Shield } from "lucide-react";
+import FileProver, { Proof } from "@/components/FileProver";
+
+type ProofResult = {
+  proof: {
+    pA: [bigint, bigint];
+    pB: [[bigint, bigint], [bigint, bigint]];
+    pC: [bigint, bigint];
+  };
+  publicSignals: [bigint];
+  fileName: string;
+};
+
+const jsonReplacer = (key: any, value: any) =>
+  typeof value === 'bigint' ? value.toString() : value;
 
 export function Verify() {
-  const [file, setFile] = useState<File | null>(null);
+  const { findFileByHash } = useFileRegistry();
+
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
-  const [verificationHash, setVerificationHash] = useState<
-    `0x${string}` | null
-  >(null);
-  const { getFileRecordOnClick } = useFileRegistry();
-  const [fileRecord, setFileRecord] = useState<any>(null);
+  const [proofResult, setProofResult] = useState<ProofResult | null>(null);
+  const [fileExists, setFileExists] = useState<boolean | null>(null);
 
-  const handleFileAccepted = (selectedFile: File) => {
-    setFile(selectedFile);
-    setVerificationHash(null);
-    setNotification(null);
+  const handleProofGenerated = (proof: Proof, publicSignals: [bigint], fileName: string) => {
+    setProofResult({
+      proof: {
+        pA: [BigInt(proof.pi_a[0]), BigInt(proof.pi_a[1])],
+        pB: [
+          [BigInt(proof.pi_b[0][0]), BigInt(proof.pi_b[0][1])],
+          [BigInt(proof.pi_b[1][0]), BigInt(proof.pi_b[1][1])],
+        ],
+        pC: [BigInt(proof.pi_c[0]), BigInt(proof.pi_c[1])],
+      },
+      publicSignals,
+      fileName,
+    });
+    setNotification({
+      message: "Proof generated successfully!",
+      type: "success",
+    });
   };
 
-  const handleVerify = async () => {
-    if (!file) return;
-
-    setIsLoading(true);
-    setNotification(null);
-
-    try {
-      const { poseidonHash } = await getVerificationHash(file);
-      setVerificationHash(poseidonHash);
-
-      // Fetch the file record
-      const record = await getFileRecordOnClick(poseidonHash);
-      setFileRecord(record);
-
-      setNotification({
-        message: "Verification hash calculated successfully.",
-        type: "success",
-      });
-    } catch (error) {
-      setNotification({
-        message: `Error: ${(error as Error).message}`,
+  const handleExistenceProof = async () => {
+    if (!proofResult) {
+      return setNotification({
+        message: "No proof generated yet.",
         type: "error",
       });
-    } finally {
-      setIsLoading(false);
     }
+    const fileExists = await findFileByHash(`0x${proofResult.publicSignals[0].toString(16)}`);
+    setFileExists(fileExists !== null);
   };
+
 
   return (
     <MainLayout>
@@ -80,48 +89,24 @@ export function Verify() {
         </div>
 
         {/* File Upload Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <FileCheck className="h-5 w-5" />
-              <span>Select File for Verification</span>
-            </CardTitle>
-            <CardDescription>
-              Choose the file you want to verify from your device.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <FileUploader onFileAccepted={handleFileAccepted} />
-
-            {file && (
-              <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
-                <FileCheck className="h-4 w-4 text-primary" />
-                <span className="font-medium text-sm">{file.name}</span>
-                <Badge variant="secondary" className="text-xs">
-                  {(file.size / 1024 / 1024).toFixed(2)} MB
-                </Badge>
-              </div>
-            )}
-
-            <Button
-              onClick={handleVerify}
-              disabled={!file || isLoading}
-              className="w-full"
-            >
-              {isLoading ? (
-                <>
-                  <Spinner />
-                  <span className="ml-2">Calculating Hash...</span>
-                </>
-              ) : (
-                <>
-                  <Hash className="h-4 w-4 mr-2" />
-                  <span>Verify File</span>
-                </>
+        <div className="p-4 border rounded-lg space-y-4">
+          <h2 className="text-xl font-semibold">Prove & Register a File</h2>
+          <FileProver onProofGenerated={handleProofGenerated} />
+          {proofResult && (
+            <div className="p-3 bg-base-200 rounded-md">
+              <p className="font-mono text-sm break-all"><strong>File Hash (Public Signal):</strong> 0x{proofResult.publicSignals[0].toString(16)}</p>
+              <p><strong>Filename:</strong> {proofResult.fileName}</p>
+              <p><strong>Digital Signal:</strong></p>
+              <pre className="whitespace-pre-wrap">{JSON.stringify(proofResult, jsonReplacer, 2)}</pre>
+              <button className="btn btn-info mt-2" onClick={handleExistenceProof}>Prove Existence</button>
+              {fileExists !== null && (
+                <p className={`mt-2 ${fileExists ? 'text-green-500' : 'text-red-500'}`}>
+                  File {fileExists ? 'exists' : 'does not exist'} in the registry.
+                </p>
               )}
-            </Button>
-          </CardContent>
-        </Card>
+            </div>
+          )}
+        </div>
 
         {/* Notification */}
         {notification && (
@@ -129,53 +114,6 @@ export function Verify() {
             message={notification.message}
             type={notification.type}
           />
-        )}
-
-        {/* Verification Results */}
-        {verificationHash && (
-          <div className="space-y-4">
-            <Separator />
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Hash className="h-5 w-5" />
-                  <span>Verification Hash</span>
-                </CardTitle>
-                <CardDescription>
-                  Cryptographic hash generated from your file.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-muted p-4 rounded-lg">
-                  <code className="text-xs font-mono break-all">
-                    {verificationHash}
-                  </code>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Shield className="h-5 w-5" />
-                  <span>Blockchain Verification</span>
-                </CardTitle>
-                <CardDescription>
-                  Checking if this file exists in the blockchain registry.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {fileRecord &&
-                fileRecord[0] !==
-                  "0x0000000000000000000000000000000000000000" ? (
-                  <VerificationResult isVerified={true} />
-                ) : (
-                  <VerificationResult isVerified={false} />
-                )}
-              </CardContent>
-            </Card>
-          </div>
         )}
       </div>
     </MainLayout>

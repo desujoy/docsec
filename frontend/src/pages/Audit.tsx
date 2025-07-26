@@ -8,68 +8,27 @@ import { decodeEventLog } from "viem";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { History, FileText, User, Hash, Calendar } from "lucide-react";
+import { useFileRegistry } from "@/hooks/useFileRegistry";
 
-interface FileEvent {
-  contentHash: string;
+type FileRecord = {
   uploader: string;
+  timestamp: bigint;
   fileName: string;
-  timestamp?: number;
-}
+};
 
 export function Audit() {
-  const [events, setEvents] = useState<FileEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const publicClient = usePublicClient();
+  const { allFiles, refetchAllFiles, allFilesLoading, getFileRecordOnClick } = useFileRegistry();
+  const [filedata, setFileData] = useState<FileRecord | null>(null);
 
-  useEffect(() => {
-    const fetchPastEvents = async () => {
-      if (!publicClient) return;
-
-      try {
-        const logs = await getLogs(publicClient, {
-          address: fileRegistryAddress,
-          fromBlock: 0n,
-          toBlock: "latest",
-        });
-
-        const eventData = logs.map((log) => {
-          const decoded = decodeEventLog({
-            abi: fileRegistryAbi,
-            data: log.data,
-            topics: log.topics,
-          });
-          return {
-            ...decoded.args,
-            timestamp: Date.now(),
-          } as FileEvent;
-        });
-
-        setEvents(eventData.reverse());
-      } catch (error) {
-        console.error("Error fetching events:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPastEvents();
-  }, [publicClient]);
-
-  useWatchContractEvent({
-    address: fileRegistryAddress,
-    abi: fileRegistryAbi,
-    eventName: "FileRegistered",
-    onLogs(logs) {
-      const newEvents = logs.map(
-        (log) =>
-          ({
-            ...log.args,
-            timestamp: Date.now(),
-          }) as FileEvent
-      );
-      setEvents((prevEvents) => [...newEvents, ...prevEvents]);
-    },
-  });
+  const handleViewFileData = async (hash: `0x${string}`) => {
+    const data = await getFileRecordOnClick(hash);
+    if (data) {
+      const [uploader, timestamp, fileName] = data as [string, bigint, string];
+      setFileData({ uploader, timestamp, fileName });
+    } else {
+      setFileData(null);
+    }
+  };
 
   return (
     <MainLayout>
@@ -82,76 +41,75 @@ export function Audit() {
           <p className="text-muted-foreground">
             View all file registration events on the blockchain.
           </p>
-          {events.length > 0 && (
+          {allFiles && allFiles[0].length > 0 && (
             <Badge variant="secondary" className="px-3 py-1">
-              {events.length} {events.length === 1 ? "Event" : "Events"} Found
+              {allFiles[0].length} {allFiles[0].length === 1 ? "Event" : "Events"} Found
             </Badge>
           )}
         </div>
 
-        {isLoading ? (
+        {filedata && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>File Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p><strong>Uploader:</strong> {filedata.uploader}</p>
+              <p><strong>Filename:</strong> {filedata.fileName}</p>
+              <p><strong>Timestamp:</strong> {new Date(Number(filedata.timestamp) * 1000).toLocaleString()}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {allFilesLoading ? (
           <Card>
             <CardContent className="pt-6 text-center">
               <p className="text-muted-foreground">Loading audit trail...</p>
             </CardContent>
           </Card>
-        ) : events.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="pt-6 text-center space-y-4">
-              <History className="h-12 w-12 text-muted-foreground mx-auto" />
-              <div>
-                <h3 className="font-semibold">No Events Found</h3>
-                <p className="text-sm text-muted-foreground">
-                  No file registration events have been recorded yet.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
         ) : (
-          <div className="grid gap-4">
-            {events.map((event, index) => (
-              <Card key={index} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center space-x-2 text-lg">
-                      <FileText className="h-5 w-5" />
-                      <span>{event.fileName || "Unnamed File"}</span>
-                    </CardTitle>
-                    {event.timestamp && (
-                      <Badge variant="outline" className="text-xs">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {new Date(event.timestamp).toLocaleDateString()}
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Hash className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">
-                          Content Hash
-                        </span>
-                      </div>
-                      <div className="bg-muted p-2 rounded font-mono text-xs break-all">
-                        {event.contentHash}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Uploader</span>
-                      </div>
-                      <div className="bg-muted p-2 rounded font-mono text-xs">
-                        {event.uploader}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="p-4 border rounded-lg space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">All Registered Files</h2>
+              <button className="btn btn-ghost" onClick={() => refetchAllFiles()}>Refresh</button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="table w-full">
+                <thead>
+                  <tr>
+                    <th>File Hash</th>
+                    <th>Filename</th>
+                    <th>Uploader</th>
+                    <th>Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allFiles && allFiles[0].length > 0 ? (
+                    allFiles[0].map((hash, index) => {
+                      const record = allFiles[1][index] as FileRecord;
+                      return (
+                        <tr key={hash}>
+                          <td className="font-mono text-xs">{hash}</td>
+                          <td>
+                            {record.fileName}
+                            <button
+                              className="btn btn-link"
+                              onClick={() => handleViewFileData(hash)}
+                            >
+                              View
+                            </button>
+                          </td>
+                          <td className="font-mono text-xs">{record.uploader}</td>
+                          <td>{new Date(Number(record.timestamp) * 1000).toLocaleString()}</td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr><td colSpan={4} className="text-center">No files registered yet.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

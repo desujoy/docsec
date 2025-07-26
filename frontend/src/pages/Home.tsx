@@ -17,9 +17,11 @@ import {
   History,
   ArrowRight,
 } from "lucide-react";
+import { useFileRegistry } from "@/hooks/useFileRegistry";
 
 export function Home() {
   const { isConnected, address } = useAccount();
+  const { isUploader, owner } = useFileRegistry();
 
   return (
     <MainLayout>
@@ -64,20 +66,27 @@ export function Home() {
                   <CardTitle>Upload File</CardTitle>
                   <CardDescription>
                     Generate cryptographic proofs for your files
+                    {!isUploader && (
+                      <p className="text-red-500 text-sm">
+                        You are not an uploader. Please contact the admin to gain access.
+                      </p>
+                    )}
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <Button asChild className="w-full" disabled={!isConnected}>
-                <a
-                  href="/upload"
-                  className="flex items-center justify-center space-x-2"
-                >
-                  <span>Upload File</span>
-                  <ArrowRight className="h-4 w-4" />
-                </a>
-              </Button>
+              {isConnected && isUploader && (
+                <Button asChild className="w-full" disabled={!isConnected || !isUploader}>
+                  <a
+                    href="/upload"
+                    className="flex items-center justify-center space-x-2"
+                  >
+                    <span>Upload File</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </a>
+                </Button>
+              )}
             </CardContent>
           </Card>
 
@@ -132,13 +141,19 @@ export function Home() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Button
-                  variant="ghost"
-                  asChild
-                  className="w-full justify-start"
-                >
-                  <a href="/admin">Access Admin Panel</a>
-                </Button>
+                {owner === address ? (
+                  <Button
+                    variant="ghost"
+                    asChild
+                    className="w-full justify-start"
+                  >
+                    <a href="/admin">Access Admin Panel</a>
+                  </Button>
+                ):(
+                  <p className="text-red-500 text-sm">
+                    You are not the owner of this registry.
+                  </p>
+                )}
               </CardContent>
             </Card>
 
