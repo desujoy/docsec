@@ -1,6 +1,6 @@
-import { createConfig, webSocket } from 'wagmi'
-import { sepolia } from 'wagmi/chains'
-import { metaMask } from 'wagmi/connectors'
+import { createConfig, webSocket } from "wagmi";
+import { sepolia } from "wagmi/chains";
+import { metaMask } from "wagmi/connectors";
 
 export const config = createConfig({
   chains: [sepolia],
@@ -8,10 +8,10 @@ export const config = createConfig({
   transports: {
     [sepolia.id]: webSocket("wss://ethereum-sepolia-rpc.publicnode.com"),
   },
-})
+});
 
-declare module 'wagmi' {
+declare module "wagmi" {
   interface Register {
-    config: typeof config
+    config: typeof config;
   }
 }
