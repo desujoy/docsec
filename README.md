@@ -32,7 +32,7 @@ docsec/ ├── backend/ │   ├── main.py │   └── requirements.
 ### 1. Clone the Repo
 
 ```bash
-git clone https://github.com/<your-username>/docsec.git
+https://github.com/desujoy/docsec.git
 cd docsec
 
 2. Backend Setup (Python + FastAPI)
