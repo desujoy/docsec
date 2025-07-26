@@ -1,108 +1,101 @@
-# DocSec
+# DocSec: Decentralized Document Security with ZK Proofs
 
-A secure document upload and verification system using blockchain and zero-knowledge proofs.
-
----
-
-## ✅ Objectives Met
-
-This project fulfills all specified objectives and technical expectations:
-
-- 🔐 **Secure File Upload Mechanism**: Files are hashed (SHA-256) and stored immutably on-chain.
-- 📜 **Blockchain-based Integrity**: Uses Ethereum-compatible smart contracts to record immutable logs of uploads and changes.
-- ✅ **File Authenticity Verification**: Anyone can verify file integrity using the smart contract log.
-- 🔒 **Access Control**: Role-based access via smart contracts.
-- ✍️ **Digital Signatures**: Implemented for preventing unauthorized file registration.
-- ⚙️ **Smart Contracts & Automation**: Written in Solidity and deployed via Hardhat.
-- 🔍 **Tamper Detection**: ZK-proof fails if file content is modified.
-- 🔄 **zkSNARK + Groth16**: Zero-knowledge proof system ensures off-chain hash knowledge without leaking the file.
-- 🧪 **Ethereum-Compatible**: Works on testnets or local blockchain.
-- 🌐 **UI/UX Interface**: React-based frontend to interact with file upload, verify, and audit features.
+DocSec is a secure and decentralized document verification system that leverages the power of blockchain technology and zero-knowledge proofs to ensure the integrity and confidentiality of your files.
 
 ---
 
-## 📁 Directory Structure
+## 🎯 Features
 
-docsec/ ├── backend/ │   ├── main.py │   └── requirements.txt ├── frontend/ │   ├── README.md │   └── ... ├── contracts/ │   ├── FileRegistry.sol │   ├── Verifier.sol │   └── ... └── circuits/ ├── filehash.circom ├── input.json └── ...
-
----
-
-## 🧪 How to Run Locally
-
-### 1. Clone the Repo
-
-```bash
-https://github.com/desujoy/docsec.git
-cd docsec
-
-2. Backend Setup (Python + FastAPI)
-
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload
-
-3. Frontend Setup (React)
-
-cd frontend
-npm install
-npm run dev
-
-4. Smart Contract Deployment
-
-cd contracts
-npm install
-npx hardhat compile
-npx hardhat run scripts/deploy.js --network <network-name>
-
-5. ZK Setup
-
-cd circuits
-# Compile the circom file and generate the proving/verifying keys
-
+*   🔐 **File Upload with Cryptographic Hash (SHA-256):** Each uploaded file is assigned a unique and tamper-proof cryptographic hash.
+*   ⚖️ **On-chain Smart Contracts for Integrity and Roles:** Smart contracts on the blockchain manage file integrity and define user access levels.
+*   🧾 **ZK Proof System using Groth16 with Circom + SnarkJS:** Zero-knowledge proofs are used to verify document properties without revealing the underlying data.
+*   🌍 **React-based Frontend for Document Handling and Audit:** An intuitive user interface for uploading, verifying, and auditing documents.
+*   🧠 **Smart Contract Audit Trail with User-Level Access:** A transparent and immutable log of all document activities is maintained on the smart contract.
 
 ---
 
-🎯 Features
+## 🏗️ Project Structure
 
-🔐 File upload with cryptographic hash (SHA-256)
+The project is organized into four main directories: `backend`, `frontend`, `contracts`, and `circuits`.
 
-⚖️ On-chain smart contracts for integrity and roles
+```text
+docsec/
+├── backend/
+│   ├── main.py
+│   └── requirements.txt
+├── contracts/
+│   ├── contracts/
+│   │   └── DocSec.sol
+│   ├── scripts/
+│   │   └── deploy.js
+│   └── hardhat.config.js
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   └── package.json
+├── circuits/
+│   └── circuit.circom
+└── README.md
+```
+## 📸 UI Preview
 
-🧾 ZK proof system using Groth16 with Circom + SnarkJS
+*   `/upload`: Upload a document and generate a corresponding ZK proof.
+*   `/verify`: Select a file to validate its integrity using the stored hash on the blockchain.
+*   `/audit`: View a comprehensive log of all uploaded file information directly from the smart contract.
 
-🌍 React-based frontend for document handling and audit
+---
 
-🧠 Smart contract audit trail with user-level access
+## 🛠️ Technologies Used
 
-
+*   **Solidity:** For writing the smart contracts.
+*   **Hardhat:** As the local blockchain development environment.
+*   **FastAPI:** To power the backend API.
+*   **React.js:** For building the frontend user interface.
+*   **Circom + SnarkJS:** For generating and verifying zero-knowledge proofs.
+*   **Ethereum (or compatible):** As the underlying blockchain layer.
 
 ---
 
-📸 UI Preview
 
-📁 /upload: Upload document and generate ZK proof
+## 🚀 Getting Started
 
-🔍 /verify: Select file and validate integrity
+### Prerequisites
 
-📜 /audit: View all uploaded file logs from the smart contract
+Make sure you have Node.js, Python, and a package manager like `npm` or `yarn` installed on your system.
 
+### Installation and Setup
 
+1.  **Clone the Repository**
+    ```bash
+    git clone https://github.com/desujoy/docsec.git
+    cd docsec
+    ```
 
----
+2.  **Backend Setup (Python + FastAPI)**
+    ```bash
+    cd backend
+    pip install -r requirements.txt
+    uvicorn main:app --reload
+    ```
 
-🛠️ Technologies Used
+3.  **Frontend Setup (React)**
+    ```bash
+    cd frontend
+    npm install
+    npm run dev
+    ```
 
-Solidity – Smart contracts
+4.  **Smart Contract Deployment**
+    ```bash
+    cd contracts
+    npm install
+    npx hardhat compile
+    npx hardhat run scripts/deploy.js --network <network-name>
+    ```
 
-Hardhat – Local blockchain dev environment
-
-FastAPI – Backend API
-
-React.js – Frontend UI
-
-Circom + SnarkJS – ZK proof generation and verification
-
-Ethereum (or compatible) – Blockchain layer
-
-
----
+5.  **ZK Setup**
+    ```bash
+    cd circuits
+    # Compile the circom file and generate the proving/verifying keys
+    # (Add specific commands for your Circom setup here)
+    ```
